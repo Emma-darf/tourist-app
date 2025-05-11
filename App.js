@@ -6,6 +6,8 @@ import RegisterScreen from './src/screen/RegisterScreen';
 import DestinationDetails from './src/screen/DestinationDetails';
 import BookGuidePage from './src/screen/BookGuidesPage';
 import BottomTabNavigator from './Navigation/BottomTabNavigator';
+import ProfileScreen from './src/screen/ProfileScreen';
+import SettingsScreen from './src/screen/SettingsScreen';
 
 const Stack = createStackNavigator();
 
@@ -64,6 +66,16 @@ const App = () => {
           options={({ route }) => ({ 
             title: `Book ${route.params.guide?.name || 'Guide'}`,
           })}
+        />
+        <Stack.Screen
+          name="Profile"
+          component={ProfileScreen}
+          options={{ title: 'My Profile' }}
+        />
+        <Stack.Screen
+          name="Settings"
+          component={SettingsScreen}
+          options={{ title: 'Settings' }}
         />
       </Stack.Navigator>
     </NavigationContainer>

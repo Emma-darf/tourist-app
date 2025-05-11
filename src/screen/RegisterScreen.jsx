@@ -2,8 +2,8 @@ import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
 import Icon from 'react-native-vector-icons/FontAwesome';
 import { getAuth, createUserWithEmailAndPassword } from 'firebase/auth';
-import {app,auth,db} from '../Firebase'; // Import your Firebase app
-import { addDoc, collection } from 'firebase/firestore';
+import { app, auth, db } from '../Firebase'; // Import your Firebase app
+import { addDoc, collection, doc, setDoc } from 'firebase/firestore';
 
 const RegisterScreen = ({ navigation }) => {
   const [email, setEmail] = useState('');
@@ -14,7 +14,7 @@ const RegisterScreen = ({ navigation }) => {
   const [phone, setPhone] = useState('');
 
   const handleRegister = async () => {
-    if (!email || !password || !confirmPassword) {
+    if (!email || !password || !confirmPassword || !firstname || !lastname || !phone) {
       Alert.alert('Error', 'Please fill in all fields.');
       return;
     }
@@ -28,8 +28,8 @@ const RegisterScreen = ({ navigation }) => {
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
       const user = userCredential.user;
 
-      // add the user to firestorre
-      let response =  await addDoc(collection(db, 'users', user.uid), {
+      // Add the user to Firestore
+      await setDoc(doc(db, 'users', user.uid), {
         password: password,
         firstname: firstname,
         lastname: lastname,
@@ -37,17 +37,13 @@ const RegisterScreen = ({ navigation }) => {
         phone: phone,
         created_at: new Date(),
         is_tourguide: false,
-      })
+      });
 
-      console.log(response);
-
-      // console.log('User registered:', userCredential.user);
       Alert.alert('Success', 'You have been registered!');
-
       navigation.navigate('Login'); // Navigate to the Login Screen
     } catch (error) {
-      console.error('Error registering:', error.message);
-      Alert.alert('Error', 'Failed to register. Please try again. Messge:'+ error.message);
+      console.error('Error registering:', error);
+      Alert.alert('Error', `Failed to register. Please try again. Message: ${error.message}`);
     }
   };
 
@@ -59,8 +55,8 @@ const RegisterScreen = ({ navigation }) => {
       <ScrollView contentContainerStyle={styles.scrollContainer}>
         <Text style={styles.title}>Register</Text>
 
-         {/* firstname input */}
-         <View style={styles.inputContainer}>
+        {/* firstname input */}
+        <View style={styles.inputContainer}>
           <Icon name="user" size={20} color="#999" style={styles.icon} />
           <TextInput
             style={styles.input}
@@ -70,9 +66,8 @@ const RegisterScreen = ({ navigation }) => {
           />
         </View>
 
-        
-         {/* firstname input */}
-         <View style={styles.inputContainer}>
+        {/* lastname input */}
+        <View style={styles.inputContainer}>
           <Icon name="user" size={20} color="#999" style={styles.icon} />
           <TextInput
             style={styles.input}
@@ -89,18 +84,19 @@ const RegisterScreen = ({ navigation }) => {
             style={styles.input}
             placeholder="Email"
             keyboardType="email-address"
+            autoCapitalize="none"
             value={email}
             onChangeText={setEmail}
           />
         </View>
 
-        {/* Email Input */}
+        {/* Phone Input */}
         <View style={styles.inputContainer}>
-          <Icon name="envelope" size={20} color="#999" style={styles.icon} />
+          <Icon name="phone" size={20} color="#999" style={styles.icon} />
           <TextInput
             style={styles.input}
             placeholder="Phone No"
-            // keyboardType="phone"
+            keyboardType="phone-pad"
             value={phone}
             onChangeText={setPhone}
           />

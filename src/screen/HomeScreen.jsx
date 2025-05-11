@@ -2,11 +2,12 @@ import React, { useState, useEffect, useRef } from 'react';
 import { 
   View, Text, ScrollView, Image, TouchableOpacity, 
   StyleSheet, FlatList, ActivityIndicator, Alert, 
-  Dimensions, RefreshControl 
+  Dimensions, RefreshControl, Modal
 } from 'react-native';
 import { collection, getDocs } from 'firebase/firestore';
-import { db } from '../Firebase';
+import { db, auth } from '../Firebase';
 import Icon from 'react-native-vector-icons/FontAwesome';
+import { useNavigation } from '@react-navigation/native';
 
 const { width, height } = Dimensions.get('window');
 const HEADER_HEIGHT = height * 0.35;
@@ -17,11 +18,13 @@ const flierMessages = [
   { id: 3, text: "Beautiful Landscapes", subtext: "Discover nature's beauty", icon: "tree" }
 ];
 
-const HomeScreen = ({ navigation }) => {
+const HomeScreen = () => {
+  const navigation = useNavigation();
   const [sites, setSites] = useState([]);
   const [attractions, setAttractions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [dropdownOpen, setDropdownOpen] = useState(false);
   const flierRef = useRef(null);
   const currentFlierIndex = useRef(0);
 
@@ -29,7 +32,6 @@ const HomeScreen = ({ navigation }) => {
     try {
       setLoading(true);
       
-      // Fetch Sites - matches exact Firebase structure
       const sitesSnapshot = await getDocs(collection(db, 'Sites'));
       const sitesData = sitesSnapshot.docs.map(doc => ({
         id: doc.id,
@@ -44,7 +46,6 @@ const HomeScreen = ({ navigation }) => {
         entrance_fee: doc.data().entrance_fee
       }));
 
-      // Fetch Attractions - matches exact Firebase structure
       const attractionsSnapshot = await getDocs(collection(db, 'attractions'));
       const attractionsData = attractionsSnapshot.docs.map(doc => ({
         id: doc.id,
@@ -88,6 +89,48 @@ const HomeScreen = ({ navigation }) => {
   useEffect(() => {
     fetchData();
   }, []);
+
+  const handleLogout = async () => {
+    try {
+      await auth.signOut();
+      navigation.replace('Login');
+    } catch (error) {
+      Alert.alert('Error', 'Failed to logout: ' + error.message);
+    }
+  };
+
+  const menuItems = [
+    { 
+      name: 'Profile', 
+      icon: 'user',
+      action: () => {
+        setDropdownOpen(false);
+        navigation.navigate('Profile');
+      }
+    },
+    { 
+      name: 'Settings', 
+      icon: 'cog',
+      action: () => {
+        setDropdownOpen(false);
+        navigation.navigate('Settings');
+      }
+    },
+    { 
+      name: 'My Trips', 
+      icon: 'suitcase',
+      action: () => {
+        setDropdownOpen(false);
+        navigation.navigate('Bookings');
+      }
+    },
+    { 
+      name: 'Logout', 
+      icon: 'sign-out',
+      color: '#e74c3c',
+      action: handleLogout
+    }
+  ];
 
   const renderFlierItem = ({ item }) => (
     <TouchableOpacity 
@@ -182,10 +225,52 @@ const HomeScreen = ({ navigation }) => {
           resizeMode="cover"
         />
         <View style={styles.headerOverlay}>
-          <Text style={styles.headerTitle}>Discover Ghana</Text>
+          <View style={styles.headerRow}>
+            <Text style={styles.headerTitle}>Discover Ghana</Text>
+            <TouchableOpacity 
+              style={styles.menuButton}
+              onPress={() => setDropdownOpen(!dropdownOpen)}
+              hitSlop={{top: 20, bottom: 20, left: 20, right: 20}}
+            >
+              <Icon name="ellipsis-v" size={24} color="#FFD700" />
+            </TouchableOpacity>
+          </View>
           <Text style={styles.headerSubtitle}>Explore the beauty and culture</Text>
         </View>
       </View>
+
+      <Modal
+        visible={dropdownOpen}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setDropdownOpen(false)}
+      >
+        <TouchableOpacity 
+          style={styles.dropdownBackdrop}
+          activeOpacity={1}
+          onPress={() => setDropdownOpen(false)}
+        >
+          <View style={styles.dropdownContainer}>
+            {menuItems.map((item, index) => (
+              <TouchableOpacity
+                key={index}
+                style={styles.menuItem}
+                onPress={item.action}
+              >
+                <Icon 
+                  name={item.icon} 
+                  size={20} 
+                  color={item.color || '#008000'} 
+                  style={styles.menuIcon}
+                />
+                <Text style={[styles.menuText, item.color && { color: item.color }]}>
+                  {item.name}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        </TouchableOpacity>
+      </Modal>
 
       <ScrollView
         contentContainerStyle={styles.scrollContainer}
@@ -288,6 +373,50 @@ const styles = StyleSheet.create({
   headerSubtitle: {
     fontSize: 16,
     color: 'white',
+  },
+  headerRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    width: '100%',
+  },
+  menuButton: {
+    padding: 10,
+    zIndex: 100,
+  },
+  dropdownBackdrop: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'flex-start',
+    alignItems: 'flex-end',
+    paddingTop: 60,
+    paddingRight: 20,
+  },
+  dropdownContainer: {
+    backgroundColor: '#fff',
+    borderRadius: 8,
+    paddingVertical: 10,
+    width: 200,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    elevation: 5,
+  },
+  menuItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+  },
+  menuIcon: {
+    width: 24,
+    marginRight: 15,
+    textAlign: 'center',
+  },
+  menuText: {
+    fontSize: 16,
+    color: '#333',
   },
   scrollContainer: {
     paddingTop: HEADER_HEIGHT,
@@ -439,28 +568,6 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontWeight: '600',
   },
-
-    
-  detailsContainer: {
-    backgroundColor: '#f9f9f9',
-    borderRadius: 10,
-    padding: 15,
-  },
-  detailItem: {
-    flexDirection: 'row',
-    marginBottom: 10,
-    flexWrap: 'wrap',
-  },
-  detailLabel: {
-    fontWeight: 'bold',
-    width: '40%',
-    color: '#008000',
-  },
-  detailContent: {
-    flex: 1,
-    color: '#555',
-  },
-
 });
 
 export default HomeScreen;

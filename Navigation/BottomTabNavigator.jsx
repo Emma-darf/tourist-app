@@ -44,38 +44,10 @@ const BottomTabNavigator = () => {
         headerShown: false,
       })}
     >
-      <Tab.Screen 
-        name="Home" 
-        component={HomeScreen} 
-        options={{ 
-          title: 'Explore Ghana',
-          tabBarAccessibilityLabel: 'Home Tab'
-        }} 
-      />
-      <Tab.Screen 
-        name="TourGuides" 
-        component={TourGuidesPage} 
-        options={{ 
-          title: 'Tour Guides',
-          tabBarAccessibilityLabel: 'Tour Guides Tab'
-        }} 
-      />
-      <Tab.Screen 
-        name="Events" 
-        component={EventsPage} 
-        options={{ 
-          title: 'Events',
-          tabBarAccessibilityLabel: 'Events Tab'
-        }} 
-      />
-      <Tab.Screen 
-        name="Bookings" 
-        component={BookingsScreen} 
-        options={{ 
-          title: 'My Bookings',
-          tabBarAccessibilityLabel: 'Bookings Tab'
-        }} 
-      />
+      <Tab.Screen name="Home" component={HomeScreen} />
+      <Tab.Screen name="TourGuides" component={TourGuidesPage} />
+      <Tab.Screen name="Events" component={EventsPage} />
+      <Tab.Screen name="Bookings" component={BookingsScreen} />
     </Tab.Navigator>
   );
 };
